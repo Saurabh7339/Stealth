@@ -1,38 +1,46 @@
-import React from "react";
-import { TableCell, Stack, Chip } from "@mui/material";
-
-interface Row {
-  full_domain_access: boolean;
-  domain: string[];
-}
-
-const TableCellComponent: React.FC<{ row: Row }> = ({ row }) => {
-  return (
-    <TableCell style={{ fontSize: "14px", fontWeight: 500 }} align="center">
+ <TableCell style={{ fontSize: "14px", fontWeight: 500 }} align="center">
       {row.full_domain_access ? (
         <strong>All Workspace Access</strong>
       ) : (
         <Stack direction="row" spacing={1} flexWrap="wrap">
-          {row.domain.map((domain, index) => (
-            <Chip
-              key={index}
-              label={domain}
-              variant="outlined"
-              sx={{
-                height: "auto",
-                "& .MuiChip-label": {
-                  display: "block",
-                  whiteSpace: "normal",
-                  fontSize: "12px",
+          {row.domain.length > 2 ? (
+            <>
+              {row.domain.slice(0, 2).map((domain) => (
+                <Chip
+                  key={domain.id}
+                  label={domain.name}
+                  variant="outlined"
+                  sx={{
+                    height: "auto",
+                    "&.MuiChip-label": {
+                      display: "block",
+                      whiteSpace: "normal",
+                      fontSize: "12px",
+                    },
+                    fontWeight: 500,
+                  }}
+                />
+              ))}
+              <span>... +{row.domain.length - 2}</span> {/* Display count of remaining domains */}
+            </>
+          ) : (
+            row.domain.map((domain) => (
+              <Chip
+                key={domain.id}
+                label={domain.name}
+                variant="outlined"
+                sx={{
+                  height: "auto",
+                  "&.MuiChip-label": {
+                    display: "block",
+                    whiteSpace: "normal",
+                    fontSize: "12px",
+                  },
                   fontWeight: 500,
-                },
-              }}
-            />
-          ))}
+                }}
+              />
+            ))
+          )}
         </Stack>
       )}
     </TableCell>
-  );
-};
-
-export default TableCellComponent;
