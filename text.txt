@@ -1,46 +1,64 @@
- <TableCell style={{ fontSize: "14px", fontWeight: 500 }} align="center">
+import React, { useState } from 'react'; // Import useState
+
+{rows.map((row) => (
+  <TableRow key={row.id}>
+    <TableCell style={{ fontSize: "14px", fontWeight: "500" }}>{row.description}</TableCell>
+    <TableCell style={{ fontSize: "14px", fontWeight: 500 }} align="center">
       {row.full_domain_access ? (
         <strong>All Workspace Access</strong>
       ) : (
-        <Stack direction="row" spacing={1} flexWrap="wrap">
-          {row.domain.length > 2 ? (
-            <>
-              {row.domain.slice(0, 2).map((domain) => (
-                <Chip
-                  key={domain.id}
-                  label={domain.name}
-                  variant="outlined"
-                  sx={{
-                    height: "auto",
-                    "&.MuiChip-label": {
-                      display: "block",
-                      whiteSpace: "normal",
-                      fontSize: "12px",
-                    },
-                    fontWeight: 500,
-                  }}
-                />
-              ))}
-              <span>... +{row.domain.length - 2}</span> {/* Display count of remaining domains */}
-            </>
-          ) : (
-            row.domain.map((domain) => (
-              <Chip
-                key={domain.id}
-                label={domain.name}
-                variant="outlined"
-                sx={{
-                  height: "auto",
-                  "&.MuiChip-label": {
-                    display: "block",
-                    whiteSpace: "normal",
-                    fontSize: "12px",
-                  },
-                  fontWeight: 500,
-                }}
-              />
-            ))
-          )}
-        </Stack>
+        <> {/* Fragment to wrap everything */}
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            {row.domain.length > 2 ? (
+              <>
+                {row.domain.slice(0, 2).map((domain) => (
+                  <Chip key={domain.id} label={domain.name} variant="outlined" sx={{ /* ...chip styles */ }} />
+                ))}
+                <span 
+                  style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }} // Style as clickable link
+                  onClick={() => handleOpenModal(row.domain)} // Open modal on click
+                >
+                  ... +{row.domain.length - 2}
+                </span>
+              </>
+            ) : (
+              row.domain.map((domain) => (
+                <Chip key={domain.id} label={domain.name} variant="outlined" sx={{ /* ...chip styles */ }} />
+              ))
+            )}
+          </Stack>
+
+          {/* Modal Component */}
+          <Modal open={isModalOpen} onClose={handleCloseModal}>
+            <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', border: '2px solid #000', boxShadow: 24, p: 4 }}>
+              <Typography variant="h6" component="h2">
+                All Domains
+              </Typography>
+              <List>
+                {modalDomains.map((domain) => (
+                  <ListItem key={domain.id || domain.name}> {/* Use a suitable key */}
+                    <ListItemText primary={domain.name} />
+                  </ListItem>
+                ))}
+              </List>
+              <Button onClick={handleCloseModal}>Close</Button>
+            </Box>
+          </Modal>
+        </>
       )}
     </TableCell>
+  </TableRow>
+))}
+
+// State and Modal functions
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [modalDomains, setModalDomains] = useState([]);
+
+const handleOpenModal = (domains) => {
+  setModalDomains(domains);
+  setIsModalOpen(true);
+};
+
+const handleCloseModal = () => {
+  setIsModalOpen(false);
+};
