@@ -1,9 +1,54 @@
-sx={{
-                  height: "auto",
-                  "&.MuiChip-label": {
-                    display: "block",
-                    whiteSpace: "normal",
-                    fontSize: "12px",
-                  },
-                  fontWeight: 500,
-                }}
+import React, { useState } from "react";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, TextField } from "@mui/material";
+
+interface RevokeKeyDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onRevoke: () => void;
+}
+
+const RevokeKeyDialog: React.FC<RevokeKeyDialogProps> = ({ open, onClose, onRevoke }) => {
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>Revoke Secret Key</DialogTitle>
+      <DialogContent>
+        <Typography>
+          This API key will immediately be disabled. API requests made using this key will be rejected,
+          causing any systems still depending on it to break. Once revoked, you'll no longer be able to view
+          this API key.
+        </Typography>
+        <TextField fullWidth value="sk-.-'OVUA" disabled variant="outlined" sx={{ mt: 2 }} />
+      </DialogContent>
+      <DialogActions>
+        <Button variant="outlined" onClick={onClose}>Cancel</Button>
+        <Button variant="contained" color="error" onClick={onRevoke}>Revoke Key</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+const App: React.FC = () => {
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleRevoke = () => {
+    alert("API Key Revoked!");  // Replace this with actual revoke logic
+    setOpen(false);
+  };
+
+  return (
+    <div>
+      <Button variant="contained" color="error" onClick={handleOpen}>Open Revoke Dialog</Button>
+      <RevokeKeyDialog open={open} onClose={handleClose} onRevoke={handleRevoke} />
+    </div>
+  );
+};
+
+export default App;
