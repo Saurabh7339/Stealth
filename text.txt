@@ -84,4 +84,122 @@ export default function UserSelect() {
       </Select>
     </FormControl>
   );
+
+
+
+
+
+
+
+
+
+
+
+import React, { useState } from "react";
+import {
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  ListItemAvatar,
+  Avatar,
+  ListItemText,
+  Checkbox,
+  TextField,
+  Chip,
+  Box,
+} from "@mui/material";
+
+const users = [
+  { id: 1, full_name: "John Doe", username: "johndoe" },
+  { id: 2, full_name: "Jane Smith", username: "janesmith" },
+  { id: 3, full_name: "Alice Johnson", username: "alicej" },
+  { id: 4, full_name: "Bob Brown", username: "bobbrown" },
+];
+
+export default function UserSelect() {
+  const [selectUser, setSelectUser] = useState<string[]>([]); // Store selected usernames
+  const [search, setSearch] = useState(""); // Store search input
+  const [open, setOpen] = useState(false); // Control dropdown open state
+
+  const handleUserChange = (event: any) => {
+    setSelectUser(event.target.value);
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(event.target.value);
+  };
+
+  const handleDelete = (username: string) => {
+    setSelectUser(selectUser.filter((u) => u !== username));
+  };
+
+  // Filter users based on search input
+  const filteredUsers = users.filter(
+    (user) =>
+      user.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      user.username.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <FormControl size="small" fullWidth>
+      <InputLabel id="demo-select-small-label">Select Users</InputLabel>
+      <Select
+        labelId="demo-select-small-label"
+        id="demo-select-small"
+        multiple
+        value={selectUser}
+        name="username"
+        onChange={handleUserChange}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
+        open={open}
+        renderValue={(selected) => (
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            {selected.map((username) => {
+              const user = users.find((u) => u.username === username);
+              return (
+                <Chip
+                  key={username}
+                  label={user ? user.full_name : username}
+                  onDelete={() => handleDelete(username)}
+                  avatar={user ? <Avatar>{user.full_name.charAt(0)}</Avatar> : undefined}
+                />
+              );
+            })}
+          </Box>
+        )}
+        MenuProps={{ PaperProps: { style: { maxHeight: 300 } } }}
+      >
+        {/* Search Input inside Menu */}
+        <MenuItem disableRipple>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search users..."
+            value={search}
+            onChange={handleSearchChange}
+            autoFocus
+            onClick={(e) => e.stopPropagation()} // Prevent closing dropdown on click
+          />
+        </MenuItem>
+
+        {/* Render filtered users */}
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map((user) => (
+            <MenuItem key={user.id} value={user.username}>
+              <Checkbox checked={selectUser.includes(user.username)} />
+              <ListItemAvatar>
+                <Avatar>{user.full_name.charAt(0)}</Avatar>
+              </ListItemAvatar>
+              <ListItemText primary={user.full_name} secondary={`@${user.username}`} />
+            </MenuItem>
+          ))
+        ) : (
+          <MenuItem disabled>No users found</MenuItem>
+        )}
+      </Select>
+    </FormControl>
+  );
+}
 }
