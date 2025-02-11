@@ -8,7 +8,6 @@ import {
   Avatar,
   ListItemText,
   Checkbox,
-  TextField,
   Chip,
   Box,
 } from "@mui/material";
@@ -22,15 +21,15 @@ const users = [
 
 export default function UserSelect() {
   const [selectUser, setSelectUser] = useState<string[]>([]); // Selected usernames
-  const [search, setSearch] = useState(""); // Search input
-  const [open, setOpen] = useState(false); // Dropdown state
+  const [search, setSearch] = useState(""); // Search input for typing
+  const [inputValue, setInputValue] = useState(""); // Value typed by user in the select
 
   const handleUserChange = (event: any) => {
     setSelectUser(event.target.value);
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(event.target.value);
+  const handleInputChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setInputValue(event.target.value as string);
   };
 
   const handleDelete = (username: string) => {
@@ -54,52 +53,41 @@ export default function UserSelect() {
         value={selectUser}
         name="username"
         onChange={handleUserChange}
-        onOpen={() => setOpen(true)}
-        onClose={() => setOpen(false)}
-        open={open}
-        renderValue={(selected) => (
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-            {selected.map((username) => {
-              const user = users.find((u) => u.username === username);
-              return (
-                <Chip
-                  key={username}
-                  label={user ? user.full_name : username}
-                  onDelete={() => handleDelete(username)}
-                  avatar={user ? <Avatar>{user.full_name.charAt(0)}</Avatar> : undefined}
-                />
-              );
-            })}
-          </Box>
-        )}
+        onInputChange={(e) => setSearch(e.target.value)} // Handle search input
+        onOpen={() => setInputValue('')} // Clear input when menu opens
+        inputProps={{
+          startAdornment: (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {/* Render chips for selected usernames */}
+              {selectUser.map((username) => {
+                const user = users.find((u) => u.username === username);
+                return (
+                  <Chip
+                    key={username}
+                    label={user ? user.full_name : username}
+                    onDelete={() => handleDelete(username)}
+                    avatar={user ? <Avatar>{user.full_name.charAt(0)}</Avatar> : undefined}
+                  />
+                );
+              })}
+            </Box>
+          ),
+          value: inputValue, // Bind the typed value to Select input
+          onChange: handleInputChange, // Update input value as user types
+        }}
         MenuProps={{ PaperProps: { style: { maxHeight: 300 } } }}
       >
-        {/* Search Input inside Menu */}
-        <MenuItem disableRipple>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Search users..."
-            value={search}
-            onChange={handleSearchChange}
-            autoFocus
-            onClick={(e) => e.stopPropagation()} // Prevent dropdown from closing
-          />
-        </MenuItem>
-
-        {/* Render filtered users */}
-        {filteredUsers.length > 0 ? (
-          filteredUsers.map((user) => (
-            <MenuItem key={user.id} value={user.username}>
-              <Checkbox checked={selectUser.includes(user.username)} />
-              <ListItemAvatar>
-                <Avatar>{user.full_name.charAt(0)}</Avatar>
-              </ListItemAvatar>
-              <ListItemText primary={user.full_name} secondary={`@${user.username}`} />
-            </MenuItem>
-          ))
-        ) : (
-          <MenuItem disabled>No users found</MenuItem>
-        )}
+        {/* Render filtered users based on search */}
+        {filteredUsers.map((user) => (
+          <MenuItem key={user.id} value={user.username}>
+            <Checkbox checked={selectUser.includes(user.username)} />
+            <ListItemAvatar>
+              <Avatar>{user.full_name.charAt(0)}</Avatar>
+            </ListItemAvatar>
+            <ListItemText primary={user.full_name} secondary={`@${user.username}`} />
+          </MenuItem>
+        ))}
       </Select>
     </FormControl>
+  );
+}
