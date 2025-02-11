@@ -9,7 +9,6 @@ import {
   ListItemText,
   Checkbox,
   TextField,
-  Menu,
 } from "@mui/material";
 
 const users = [
@@ -32,6 +31,7 @@ export default function UserSelect() {
     setSearch(event.target.value);
   };
 
+  // Filter users based on search input
   const filteredUsers = users.filter(
     (user) =>
       user.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -52,11 +52,7 @@ export default function UserSelect() {
         onClose={() => setOpen(false)}
         open={open}
         renderValue={(selected) => selected.join(", ")}
-        MenuProps={{
-          PaperProps: {
-            style: { maxHeight: 300 },
-          },
-        }}
+        MenuProps={{ PaperProps: { style: { maxHeight: 300 } } }}
       >
         {/* Search Input inside Menu */}
         <MenuItem disableRipple>
@@ -67,6 +63,7 @@ export default function UserSelect() {
             value={search}
             onChange={handleSearchChange}
             autoFocus
+            onClick={(e) => e.stopPropagation()} // Prevent closing dropdown on click
           />
         </MenuItem>
 
