@@ -1,108 +1,50 @@
-const WorkspaceDetails: React.FC = () => {
-    const [tabIndex, setTabIndex] = React.useState(0);
-    const dispatch = useDispatch<AppDispatch>();
-    const [conditionalDisabled, setConditionalDisabled] = React.useState(false);
-    const [isDomainUser, setIsDomainUser] = React.useState(false);
-    const [isAppUser, setIsAppUser] = React.useState(false);
-    const [isApiUser, setIsApiUser] = React.useState(false);
-    const [isLoading, setIsLoading] = React.useState(false);
-    const [tabsLoading, setTabsLoading] = React.useState(true);  // New loader state for tabs
-    const allWorkspace = useSelector((state: RootState) => state?.workspace);
-    const workspaceDetails = allWorkspace?.workspaceDetails;
-    
-    React.useEffect(() => {
-        setIsDomainUser(false);
-        setIsApiUser(false);
-        setConditionalDisabled(false);
-        
-        let userInfo = JSON.parse(localStorage.getItem("userInfo") ?? '{}');
-        let userRole = userInfo.role;
-        const finalUserRole = workspaceDetails?.[0]?.role;
-        
-        if (finalUserRole === "domain_admin" || finalUserRole === "api_user" || finalUserRole === "app_user") {
-            setConditionalDisabled(true);
-        }
-        
-        if (finalUserRole === "app_user") {
-            setIsAppUser(true);
-        }
-        if (finalUserRole === "domain_admin") {
-            setIsDomainUser(true);
-        }
-        if (finalUserRole === "api_user") {
-            setIsApiUser(true);
-        }
-        
-    }, [workspaceDetails]);
+import { Box, Button, Typography, IconButton, Divider } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import dayjs from "dayjs";
 
-    React.useEffect(() => {
-        if (finalUserRole === "api_user") {
-            setIsApiUser(true);
-        }
-        setIsLoading(false);
-    }, [allWorkspace]);
+const conversations = [
+  { summary: "Conversation 1", last_modified_date: "2025-02-27", thread_id: "hehehe" },
+  { summary: "Conversation 2", last_modified_date: "2025-02-26", thread_id: "hahaha" },
+  { summary: "Conversation 3", last_modified_date: "2025-02-25", thread_id: "hohoho" },
+  { summary: "Conversation 4", last_modified_date: "2025-02-27", thread_id: "lolol" },
+];
 
-    React.useEffect(() => {
-        setTabsLoading(true); // Start loading before updating tabs
+const today = dayjs().format("YYYY-MM-DD");
+const yesterday = dayjs().subtract(1, "day").format("YYYY-MM-DD");
 
-        let tabs = [
-            { label: `Connections (${allConnection?.num_results || 0})` },
-            { label: `Data Sources (${workspace?.dataSource2?.count || 0})` },
-            { label: `Domains (${workspace?.domain2?.count || 0})` },
-            { label: "Client API Tokens" },
-            { label: "My Approval" }
-        ];
-
-        if (conditionalDisabled) {
-            if (isDomainUser || isApiUser) {
-                tabs = [
-                    { label: "Connections" },
-                    { label: `Data Sources (${workspace?.dataSource2?.count || 0})` },
-                    { label: `Domains (${workspace?.domain2?.count || 0})` }
-                ];
-            }
-        }
-
-        console.log("Updated tabs:", tabs);
-
-        setTimeout(() => {
-            setTabsLoading(false); // Stop loading once tabs are set
-        }, 500); // Simulating delay (adjust as needed)
-
-    }, [conditionalDisabled, isDomainUser, isApiUser, workspace]);
-
-    return (
-        <Box p={0.2}>
-            {isLoading || tabsLoading ? (
-                <LinearProgress color="inherit" />
-            ) : (
-                <>
-                    <WorkspaceDetailsHeading workspaceDetailsData={workspaceDetails} />
-                    <CustomWorkspaceCard
-                        workspaceData={workspace?.workspaceDetails}
-                        workspaceId={workspaceId}
-                        workspaceType={workspaceType}
-                    />
-
-                    <div>
-                        <CustomTabs
-                            tabs={tabs}
-                            value={tabIndex}
-                            onTabChange={handleTabChange}
-                        />
-
-                        <div style={{ marginTop: 5 }}>
-                            {tabIndex === 0 && <Connections workspaceId={workspaceId} />}
-                            {tabIndex === 1 && <DataSourceDetails workspaceId={workspaceId} />}
-                            {tabIndex === 2 && <DomainDetails workspaceId={workspaceId} />}
-                            {tabIndex === 3 && <ClientAPITokenDetails tabIndex={tabIndex} workspaceId={workspaceId} filterConfig={filterConfig} />}
-                            {conditionalDisabled && tabIndex === 4 && <MyApprovalDetails tabIndex={tabIndex} />}
-                        </div>
-                    </div>
-                </>
-            )}
-        </Box>
-    );
+const groupedConversations = {
+  Today: conversations.filter((c) => c.last_modified_date === today),
+  Yesterday: conversations.filter((c) => c.last_modified_date === yesterday),
+  Previous: conversations.filter((c) => c.last_modified_date < yesterday),
 };
 
-export default WorkspaceDetails;
+const Sidebar = ({ toggleLeftPanel }) => {
+  return (
+    <Box p={2}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Typography variant="h6">Chat Threads</Typography>
+        <IconButton onClick={toggleLeftPanel}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      {Object.entries(groupedConversations).map(([label, threads]) =>
+        threads.length > 0 ? (
+          <Box key={label} mt={2}>
+            <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1 }}>
+              {label}
+            </Typography>
+            <Divider />
+            {threads.map((thread) => (
+              <Button key={thread.thread_id} fullWidth variant="outlined" sx={{ mt: 1 }}>
+                {thread.summary}
+              </Button>
+            ))}
+          </Box>
+        ) : null
+      )}
+    </Box>
+  );
+};
+
+export default Sidebar;
