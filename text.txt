@@ -1,148 +1,108 @@
-import * as React from "react";
-import { Box, LinearProgress } from "@mui/material";
-import CustomTabs from "../../tab/components/CustomTabs";
-import WorkspaceDetailsHeading from "../WorkspaceCardHeading";
-import CustomWorkspaceCard from "../WorkspaceCard";
-import DomainDetails from "./DomainDetails";
-import Connections from "./Connections";
-import ClientAPITokenDetails from "./ClientAPITokenDetails";
-import MyApprovalDetails from "./MyApprovalDetails";
-import DataSourceDetails from "./DataSourceDetails";
-import { useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../../redux/store";
-import {
-  getAllDomain,
-  getWorkspaceDetails,
-  getWorkspaceRequestAccess,
-  getAndFilterDataSource,
-  getAndFilterDomain,
-  getWorkspaceClientApiTokens,
-  getDataSourceTagSearch,
-  getDomainDatabaseType,
-} from "../../../redux/workspace/workspaceAction";
-
 const WorkspaceDetails: React.FC = () => {
-  const { workspaceId } = useParams();
-  const dispatch = useDispatch<AppDispatch>();
+    const [tabIndex, setTabIndex] = React.useState(0);
+    const dispatch = useDispatch<AppDispatch>();
+    const [conditionalDisabled, setConditionalDisabled] = React.useState(false);
+    const [isDomainUser, setIsDomainUser] = React.useState(false);
+    const [isAppUser, setIsAppUser] = React.useState(false);
+    const [isApiUser, setIsApiUser] = React.useState(false);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [tabsLoading, setTabsLoading] = React.useState(true);  // New loader state for tabs
+    const allWorkspace = useSelector((state: RootState) => state?.workspace);
+    const workspaceDetails = allWorkspace?.workspaceDetails;
+    
+    React.useEffect(() => {
+        setIsDomainUser(false);
+        setIsApiUser(false);
+        setConditionalDisabled(false);
+        
+        let userInfo = JSON.parse(localStorage.getItem("userInfo") ?? '{}');
+        let userRole = userInfo.role;
+        const finalUserRole = workspaceDetails?.[0]?.role;
+        
+        if (finalUserRole === "domain_admin" || finalUserRole === "api_user" || finalUserRole === "app_user") {
+            setConditionalDisabled(true);
+        }
+        
+        if (finalUserRole === "app_user") {
+            setIsAppUser(true);
+        }
+        if (finalUserRole === "domain_admin") {
+            setIsDomainUser(true);
+        }
+        if (finalUserRole === "api_user") {
+            setIsApiUser(true);
+        }
+        
+    }, [workspaceDetails]);
 
-  // States
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isDomainUser, setIsDomainUser] = React.useState(false);
-  const [isApiUser, setIsApiUser] = React.useState(false);
-  const [isAppUser, setIsAppUser] = React.useState(false);
-  const [conditionalDisabled, setConditionalDisabled] = React.useState(false);
-  const [tabs, setTabs] = React.useState<{ label: string }[]>([]);
-  const [tabIndex, setTabIndex] = React.useState(0);
+    React.useEffect(() => {
+        if (finalUserRole === "api_user") {
+            setIsApiUser(true);
+        }
+        setIsLoading(false);
+    }, [allWorkspace]);
 
-  // Redux selectors
-  const workspace = useSelector((state: RootState) => state?.workspace);
-  const { allConnection } = useSelector((state: RootState) => state?.connection);
-  const workspaceDetails = useSelector(
-    (state: RootState) => state?.workspace?.workspaceDetails
-  );
+    React.useEffect(() => {
+        setTabsLoading(true); // Start loading before updating tabs
 
-  // Fetch data
-  React.useEffect(() => {
-    setIsLoading(true);
-
-    const fetchData = async () => {
-      await dispatch(getWorkspaceDetails(workspaceId));
-      await dispatch(getAllDomain());
-      await dispatch(getWorkspaceRequestAccess(workspaceId));
-      await dispatch(getWorkspaceClientApiTokens(workspaceId));
-      await dispatch(getAndFilterDataSource(workspaceId, { page: 1, page_size: 6 }));
-      await dispatch(getAndFilterDomain(workspaceId, { page: 1, page_size: 6 }));
-      await dispatch(getDataSourceTagSearch(workspaceId, {}));
-      await dispatch(getDomainDatabaseType(workspaceId));
-
-      setIsLoading(false);
-    };
-
-    fetchData();
-  }, [workspaceId]);
-
-  // Handle user role
-  React.useEffect(() => {
-    if (!workspaceDetails || workspaceDetails.length === 0) return;
-
-    const finalUserRole = workspaceDetails[0]?.role;
-    if (["domain_admin", "api_user", "app_user"].includes(finalUserRole)) {
-      setConditionalDisabled(true);
-    }
-
-    setIsDomainUser(finalUserRole === "domain_admin");
-    setIsApiUser(finalUserRole === "api_user");
-    setIsAppUser(finalUserRole === "app_user");
-  }, [workspaceDetails]);
-
-  // Update tabs after loading
-  React.useEffect(() => {
-    if (isLoading) return;
-
-    let updatedTabs: { label: string }[] = [
-      { label: `Connections (${allConnection?.num_results || 0})` },
-      { label: `Data Sources (${workspace?.dataSource?.count || 0})` },
-      { label: `Domains (${workspace?.domain?.count || 0})` },
-      { label: `Client API Tokens` },
-      { label: `My Approval` },
-    ];
-
-    if (conditionalDisabled) {
-      if (isDomainUser || isApiUser) {
-        updatedTabs = [
-          { label: "Connections" },
-          { label: `Data Sources (${workspace?.dataSource?.count || 0})` },
-          { label: `Domains (${workspace?.domain?.count || 0})` },
-          { label: "Client API Tokens" },
+        let tabs = [
+            { label: `Connections (${allConnection?.num_results || 0})` },
+            { label: `Data Sources (${workspace?.dataSource2?.count || 0})` },
+            { label: `Domains (${workspace?.domain2?.count || 0})` },
+            { label: "Client API Tokens" },
+            { label: "My Approval" }
         ];
-      } else {
-        updatedTabs = [
-          { label: "Connections" },
-          { label: `Data Sources (${workspace?.dataSource?.count || 0})` },
-          { label: `Domains (${workspace?.domain?.count || 0})` },
-        ];
-      }
-    }
 
-    setTabs(updatedTabs);
-  }, [isLoading, isDomainUser, isApiUser, conditionalDisabled, allConnection, workspace]);
+        if (conditionalDisabled) {
+            if (isDomainUser || isApiUser) {
+                tabs = [
+                    { label: "Connections" },
+                    { label: `Data Sources (${workspace?.dataSource2?.count || 0})` },
+                    { label: `Domains (${workspace?.domain2?.count || 0})` }
+                ];
+            }
+        }
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabIndex(newValue);
-  };
+        console.log("Updated tabs:", tabs);
 
-  return (
-    <Box p={0.2}>
-      {isLoading ? (
-        <LinearProgress color="inherit" />
-      ) : (
-        <>
-          <WorkspaceDetailsHeading workspaceDetailsData={workspaceDetails} />
-          <CustomWorkspaceCard workspaceData={workspaceDetails} />
-          <CustomTabs tabs={tabs} value={tabIndex} onTabChange={handleTabChange} />
-          <div style={{ marginTop: 5 }}>
-            {tabIndex === 0 && <Connections workspaceId={workspaceId} />}
-            {tabIndex === 1 && <DataSourceDetails workspaceId={workspaceId} />}
-            {tabIndex === 2 && <DomainDetails workspaceId={workspaceId} />}
-            {tabIndex === 3 && (
-              <ClientAPITokenDetails
-                tabIndex={tabIndex}
-                workspaceId={workspaceId}
-                filterConfig={{
-                  autoComplete: {
-                    isRequired: true,
-                    data: [{ name: "Domains" }],
-                  },
-                }}
-              />
+        setTimeout(() => {
+            setTabsLoading(false); // Stop loading once tabs are set
+        }, 500); // Simulating delay (adjust as needed)
+
+    }, [conditionalDisabled, isDomainUser, isApiUser, workspace]);
+
+    return (
+        <Box p={0.2}>
+            {isLoading || tabsLoading ? (
+                <LinearProgress color="inherit" />
+            ) : (
+                <>
+                    <WorkspaceDetailsHeading workspaceDetailsData={workspaceDetails} />
+                    <CustomWorkspaceCard
+                        workspaceData={workspace?.workspaceDetails}
+                        workspaceId={workspaceId}
+                        workspaceType={workspaceType}
+                    />
+
+                    <div>
+                        <CustomTabs
+                            tabs={tabs}
+                            value={tabIndex}
+                            onTabChange={handleTabChange}
+                        />
+
+                        <div style={{ marginTop: 5 }}>
+                            {tabIndex === 0 && <Connections workspaceId={workspaceId} />}
+                            {tabIndex === 1 && <DataSourceDetails workspaceId={workspaceId} />}
+                            {tabIndex === 2 && <DomainDetails workspaceId={workspaceId} />}
+                            {tabIndex === 3 && <ClientAPITokenDetails tabIndex={tabIndex} workspaceId={workspaceId} filterConfig={filterConfig} />}
+                            {conditionalDisabled && tabIndex === 4 && <MyApprovalDetails tabIndex={tabIndex} />}
+                        </div>
+                    </div>
+                </>
             )}
-            {conditionalDisabled && tabIndex === 4 && <MyApprovalDetails tabIndex={tabIndex} />}
-          </div>
-        </>
-      )}
-    </Box>
-  );
+        </Box>
+    );
 };
 
 export default WorkspaceDetails;
