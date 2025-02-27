@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button, Typography, IconButton, Divider, TextField } from "@mui/material";
+import { Box, Typography, IconButton, Divider, TextField } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import dayjs from "dayjs";
 
@@ -25,13 +25,25 @@ const groupedConversations = {
 
 const Sidebar = ({ toggleLeftPanel }) => {
   const [search, setSearch] = useState("");
+  const [selectedThread, setSelectedThread] = useState(null);
 
   return (
     <Box p={2} width={300} sx={{ border: "1px solid #ccc", borderRadius: "8px", background: "#fff" }}>
       {/* New Chat Button */}
-      <Button fullWidth variant="contained" color="success" sx={{ mb: 2 }}>
+      <Box
+        sx={{
+          background: "#4CAF50",
+          color: "#fff",
+          textAlign: "center",
+          padding: "10px",
+          borderRadius: "5px",
+          cursor: "pointer",
+          mb: 2,
+        }}
+        onClick={() => setSelectedThread(null)}
+      >
         Create New Chat +
-      </Button>
+      </Box>
 
       {/* Search Field */}
       <TextField
@@ -64,9 +76,20 @@ const Sidebar = ({ toggleLeftPanel }) => {
               {threads
                 .filter((thread) => thread.summary.toLowerCase().includes(search.toLowerCase()))
                 .map((thread) => (
-                  <Button key={thread.thread_id} fullWidth variant="contained" sx={{ mt: 1, background: "#fdd835" }}>
+                  <Box
+                    key={thread.thread_id}
+                    sx={{
+                      padding: "10px",
+                      marginTop: "5px",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      background: selectedThread === thread.thread_id ? "#D3D3D3" : "transparent",
+                      "&:hover": { background: "#f0f0f0" },
+                    }}
+                    onClick={() => setSelectedThread(thread.thread_id)}
+                  >
                     {thread.summary}
-                  </Button>
+                  </Box>
                 ))}
             </Box>
           ) : null
