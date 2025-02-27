@@ -1,31 +1,50 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchConversations } from "../redux/actions";
 import { Box, Typography, IconButton, Divider, TextField } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import dayjs from "dayjs";
 
-const conversations = [
-  { summary: "Conversation 1", last_modified_date: "2025-02-27", thread_id: "hehehe" },
-  { summary: "Conversation 2", last_modified_date: "2025-02-26", thread_id: "hahaha" },
-  { summary: "Conversation 3", last_modified_date: "2025-02-24", thread_id: "hohoho" },
-  { summary: "Conversation 4", last_modified_date: "2025-02-20", thread_id: "lolol" },
-  { summary: "Conversation 5", last_modified_date: "2025-02-10", thread_id: "rofl" },
-];
-
-const today = dayjs().format("YYYY-MM-DD");
-const yesterday = dayjs().subtract(1, "day").format("YYYY-MM-DD");
-const last7Days = dayjs().subtract(7, "day").format("YYYY-MM-DD");
-const lastMonth = dayjs().subtract(30, "day").format("YYYY-MM-DD");
-
-const groupedConversations = {
-  Today: conversations.filter((c) => c.last_modified_date === today),
-  Yesterday: conversations.filter((c) => c.last_modified_date === yesterday),
-  "Last 7 Days": conversations.filter((c) => c.last_modified_date > last7Days && c.last_modified_date < yesterday),
-  "Last Month": conversations.filter((c) => c.last_modified_date > lastMonth && c.last_modified_date < last7Days),
-};
-
 const Sidebar = ({ toggleLeftPanel }) => {
+  const dispatch = useDispatch();
+  const conversations = useSelector((state) => state.chat.conversations) || [];
   const [search, setSearch] = useState("");
   const [selectedThread, setSelectedThread] = useState(null);
+  const [groupedConversations, setGroupedConversations] = useState({});
+
+  useEffect(() => {
+    dispatch(fetchConversations()); // Fetch chat threads
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (conversations.length > 0) {
+      console.log("Conversations from useSelector:", conversations); // Debugging log
+
+      // ✅ Extract proper dates for today, yesterday, etc.
+      const today = dayjs().startOf("day");
+      const yesterday = dayjs().subtract(1, "day").startOf("day");
+      const last7Days = dayjs().subtract(7, "day").startOf("day");
+      const lastMonth = dayjs().subtract(30, "day").startOf("day");
+
+      // ✅ Correctly extract the `YYYY-MM-DD` part from `last_updated_date`
+      const getFormattedDate = (dateString) => dayjs(dateString.split(" ")[0], "YYYY-MM-DD").startOf("day");
+
+      // ✅ Correct Grouping Logic
+      const grouped = {
+        Today: conversations.filter((c) => getFormattedDate(c.last_updated_date).isSame(today, "day")),
+        Yesterday: conversations.filter((c) => getFormattedDate(c.last_updated_date).isSame(yesterday, "day")),
+        "Last 7 Days": conversations.filter(
+          (c) => getFormattedDate(c.last_updated_date).isAfter(last7Days) && getFormattedDate(c.last_updated_date).isBefore(yesterday)
+        ),
+        "Last Month": conversations.filter(
+          (c) => getFormattedDate(c.last_updated_date).isAfter(lastMonth) && getFormattedDate(c.last_updated_date).isBefore(last7Days)
+        ),
+      };
+
+      console.log("Grouped Conversations:", grouped); // Debugging log
+      setGroupedConversations(grouped);
+    }
+  }, [conversations]); // Re-run when conversations change
 
   return (
     <Box p={2} width={300} sx={{ border: "1px solid #ccc", borderRadius: "8px", background: "#fff" }}>
@@ -74,7 +93,7 @@ const Sidebar = ({ toggleLeftPanel }) => {
               </Typography>
               <Divider />
               {threads
-                .filter((thread) => thread.summary.toLowerCase().includes(search.toLowerCase()))
+                .filter((thread) => thread.title.toLowerCase().includes(search.toLowerCase()))
                 .map((thread) => (
                   <Box
                     key={thread.thread_id}
@@ -88,7 +107,7 @@ const Sidebar = ({ toggleLeftPanel }) => {
                     }}
                     onClick={() => setSelectedThread(thread.thread_id)}
                   >
-                    {thread.summary}
+                    {thread.title}
                   </Box>
                 ))}
             </Box>
