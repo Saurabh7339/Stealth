@@ -1,121 +1,97 @@
-import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchConversations } from "../redux/actions";
-import { Box, Typography, IconButton, Divider, TextField } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import dayjs from "dayjs";
+import React, { useEffect, useState, useCallback } from "react";
+import { TextField, Autocomplete } from "@mui/material";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchDomains } from "./domainSlice"; // Import your Redux action
 
-const Sidebar = ({ toggleLeftPanel }) => {
+const DomainSelector = () => {
   const dispatch = useDispatch();
-  const conversations = useSelector((state) => state.chat.conversations) || [];
-  const [search, setSearch] = useState("");
-  const [selectedThread, setSelectedThread] = useState(null);
-  const [groupedConversations, setGroupedConversations] = useState({});
+  const domains = useSelector((state) => state.domains.list); // Getting domain list from Redux store
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [isFetching, setIsFetching] = useState(false);
+  const [hasMoreAbove, setHasMoreAbove] = useState(false); // Flag for loading above
+  const [hasMoreBelow, setHasMoreBelow] = useState(true);  // Flag for loading below
 
-  useEffect(() => {
-    dispatch(fetchConversations()); // Fetch chat threads
-  }, [dispatch]);
+  // Function to fetch domains
+  const loadDomains = async (search, pageNum, direction) => {
+    setIsFetching(true);
+    const newDomains = await dispatch(fetchDomains({ search, page: pageNum })); 
 
-  useEffect(() => {
-    if (conversations.length > 0) {
-      console.log("Conversations from useSelector:", conversations); // Debugging log
-
-      // ✅ Extract proper dates for today, yesterday, etc.
-      const today = dayjs().startOf("day");
-      const yesterday = dayjs().subtract(1, "day").startOf("day");
-      const last7Days = dayjs().subtract(7, "day").startOf("day");
-      const lastMonth = dayjs().subtract(30, "day").startOf("day");
-
-      // ✅ Correctly extract the `YYYY-MM-DD` part from `last_updated_date`
-      const getFormattedDate = (dateString) => dayjs(dateString.split(" ")[0], "YYYY-MM-DD").startOf("day");
-
-      // ✅ Correct Grouping Logic
-      const grouped = {
-        Today: conversations.filter((c) => getFormattedDate(c.last_updated_date).isSame(today, "day")),
-        Yesterday: conversations.filter((c) => getFormattedDate(c.last_updated_date).isSame(yesterday, "day")),
-        "Last 7 Days": conversations.filter(
-          (c) => getFormattedDate(c.last_updated_date).isAfter(last7Days) && getFormattedDate(c.last_updated_date).isBefore(yesterday)
-        ),
-        "Last Month": conversations.filter(
-          (c) => getFormattedDate(c.last_updated_date).isAfter(lastMonth) && getFormattedDate(c.last_updated_date).isBefore(last7Days)
-        ),
-      };
-
-      console.log("Grouped Conversations:", grouped); // Debugging log
-      setGroupedConversations(grouped);
+    if (direction === "above") {
+      setHasMoreAbove(newDomains.length > 0); // Enable scrolling above if data exists
+    } else {
+      setHasMoreBelow(newDomains.length > 0); // Enable scrolling below if data exists
     }
-  }, [conversations]); // Re-run when conversations change
+    
+    setIsFetching(false);
+  };
+
+  // Fetch initial results & handle search input
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      await loadDomains(searchTerm, 1, "below");
+      setPage(2); // Reset page number after fetching first set
+    };
+    fetchInitialData();
+  }, [searchTerm, dispatch]);
+
+  // Load more results on scroll
+  const handleScroll = useCallback(
+    async (event) => {
+      const listboxNode = event.currentTarget;
+      const scrollTop = listboxNode.scrollTop;
+      const isAtTop = scrollTop === 0;
+      const isAtBottom =
+        listboxNode.scrollHeight - listboxNode.scrollTop <=
+        listboxNode.clientHeight + 20;
+
+      // Load older data when scrolling up
+      if (isAtTop && hasMoreAbove && !isFetching) {
+        await loadDomains(searchTerm, page - 1, "above");
+        setPage((prev) => (prev > 1 ? prev - 1 : prev)); // Decrease page for older records
+      }
+
+      // Load newer data when scrolling down
+      if (isAtBottom && hasMoreBelow && !isFetching) {
+        await loadDomains(searchTerm, page, "below");
+        setPage((prev) => prev + 1);
+      }
+    },
+    [isFetching, searchTerm, page, hasMoreAbove, hasMoreBelow, dispatch]
+  );
 
   return (
-    <Box p={2} width={300} sx={{ border: "1px solid #ccc", borderRadius: "8px", background: "#fff" }}>
-      {/* New Chat Button */}
-      <Box
-        sx={{
-          background: "#4CAF50",
-          color: "#fff",
-          textAlign: "center",
-          padding: "10px",
-          borderRadius: "5px",
-          cursor: "pointer",
-          mb: 2,
-        }}
-        onClick={() => setSelectedThread(null)}
-      >
-        Create New Chat +
-      </Box>
-
-      {/* Search Field */}
-      <TextField
-        fullWidth
-        variant="outlined"
-        placeholder="Search chats..."
-        size="small"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        sx={{ mb: 2 }}
-      />
-
-      {/* Chat Threads Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-        <Typography variant="h6">Chat Threads</Typography>
-        <IconButton onClick={toggleLeftPanel}>
-          <CloseIcon />
-        </IconButton>
-      </Box>
-
-      {/* Scrollable Conversations List */}
-      <Box sx={{ maxHeight: "400px", overflowY: "auto", pr: 1 }}>
-        {Object.entries(groupedConversations).map(([label, threads]) =>
-          threads.length > 0 ? (
-            <Box key={label} mt={2}>
-              <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1 }}>
-                {label}
-              </Typography>
-              <Divider />
-              {threads
-                .filter((thread) => thread.title.toLowerCase().includes(search.toLowerCase()))
-                .map((thread) => (
-                  <Box
-                    key={thread.thread_id}
-                    sx={{
-                      padding: "10px",
-                      marginTop: "5px",
-                      borderRadius: "5px",
-                      cursor: "pointer",
-                      background: selectedThread === thread.thread_id ? "#D3D3D3" : "transparent",
-                      "&:hover": { background: "#f0f0f0" },
-                    }}
-                    onClick={() => setSelectedThread(thread.thread_id)}
-                  >
-                    {thread.title}
-                  </Box>
-                ))}
-            </Box>
-          ) : null
-        )}
-      </Box>
-    </Box>
+    <Autocomplete
+      freeSolo
+      options={domains}
+      onInputChange={(e, value) => setSearchTerm(value)}
+      renderInput={(params) => (
+        <TextField {...params} label="Search Domains" variant="outlined" />
+      )}
+      slotProps={{
+        popper: {
+          modifiers: [
+            {
+              name: "preventOverflow",
+              options: { boundary: "window" },
+            },
+          ],
+        },
+        listbox: {
+          onScroll: handleScroll,
+          style: {
+            maxHeight: "200px", // Ensure dropdown has a fixed height to enable scrolling
+            overflowY: "auto",  // Enables scrolling when needed
+          },
+        },
+      }}
+      renderOption={(props, option) => (
+        <li {...props} key={option.id}>
+          {option.name}
+        </li>
+      )}
+    />
   );
 };
 
-export default Sidebar;
+export default DomainSelector;
