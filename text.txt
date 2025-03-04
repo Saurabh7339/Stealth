@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { TextField, Autocomplete } from "@mui/material";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchDomains } from "./domainSlice"; // Import your Redux action
@@ -9,49 +9,63 @@ const DomainSelector = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [isFetching, setIsFetching] = useState(false);
-  const [hasMoreAbove, setHasMoreAbove] = useState(false); // Flag for loading above
-  const [hasMoreBelow, setHasMoreBelow] = useState(true);  // Flag for loading below
+  const [hasMoreAbove, setHasMoreAbove] = useState(true);
+  const [hasMoreBelow, setHasMoreBelow] = useState(true);
+  const listboxRef = useRef(null); // Reference to listbox for maintaining scroll position
 
-  // Function to fetch domains
+  // Function to fetch domains (direction: "above" or "below")
   const loadDomains = async (search, pageNum, direction) => {
+    if (isFetching) return; // Prevent multiple calls
     setIsFetching(true);
-    const newDomains = await dispatch(fetchDomains({ search, page: pageNum })); 
 
-    if (direction === "above") {
-      setHasMoreAbove(newDomains.length > 0); // Enable scrolling above if data exists
-    } else {
-      setHasMoreBelow(newDomains.length > 0); // Enable scrolling below if data exists
+    const newDomains = await dispatch(fetchDomains({ search, page: pageNum }));
+
+    if (newDomains.length === 0) {
+      if (direction === "above") setHasMoreAbove(false);
+      else setHasMoreBelow(false);
     }
-    
+
     setIsFetching(false);
+    return newDomains;
   };
 
-  // Fetch initial results & handle search input
+  // Fetch initial data & reset on search
   useEffect(() => {
     const fetchInitialData = async () => {
       await loadDomains(searchTerm, 1, "below");
-      setPage(2); // Reset page number after fetching first set
+      setPage(2);
     };
     fetchInitialData();
   }, [searchTerm, dispatch]);
 
-  // Load more results on scroll
+  // Scroll Event Handler
   const handleScroll = useCallback(
     async (event) => {
       const listboxNode = event.currentTarget;
+      if (!listboxNode) return;
+
       const scrollTop = listboxNode.scrollTop;
       const isAtTop = scrollTop === 0;
       const isAtBottom =
         listboxNode.scrollHeight - listboxNode.scrollTop <=
-        listboxNode.clientHeight + 20;
+        listboxNode.clientHeight + 10;
 
-      // Load older data when scrolling up
+      // Scroll up (load older data)
       if (isAtTop && hasMoreAbove && !isFetching) {
-        await loadDomains(searchTerm, page - 1, "above");
-        setPage((prev) => (prev > 1 ? prev - 1 : prev)); // Decrease page for older records
+        const prevScrollHeight = listboxNode.scrollHeight;
+        const olderDomains = await loadDomains(searchTerm, page - 1, "above");
+
+        if (olderDomains?.length) {
+          setPage((prev) => (prev > 1 ? prev - 1 : prev));
+
+          // Preserve scroll position after prepending new items
+          setTimeout(() => {
+            listboxNode.scrollTop = listboxNode.scrollHeight - prevScrollHeight;
+          }, 0);
+        }
       }
 
-      // Load newer data when scrolling down
+      // Scroll down (load newer data)
       if (isAtBottom && hasMoreBelow && !isFetching) {
         await loadDomains(searchTerm, page, "below");
         setPage((prev) => prev + 1);
@@ -78,10 +92,11 @@ const DomainSelector = () => {
           ],
         },
         listbox: {
+          ref: listboxRef,
           onScroll: handleScroll,
           style: {
-            maxHeight: "200px", // Ensure dropdown has a fixed height to enable scrolling
-            overflowY: "auto",  // Enables scrolling when needed
+            maxHeight: "250px", // Ensure dropdown has enough height for scrolling
+            overflowY: "auto",  // Enables scrolling
           },
         },
       }}
