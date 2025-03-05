@@ -1,5 +1,5 @@
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { Snackbar, Alert } from "@mui/material";
+import { Snackbar, Alert, SnackbarOrigin } from "@mui/material";
 import EventEmitter from "events";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
@@ -12,6 +12,11 @@ interface NotificationData {
   message: string;
   severity: "success" | "error" | "warning" | "info";
 }
+
+// Function to truncate long messages
+const truncateMessage = (msg: string, maxLength: number = 50): string => {
+  return msg.length > maxLength ? msg.slice(0, maxLength) + "…" : msg;
+};
 
 // Function to show a notification globally
 export const showNotification = (message: string, severity: NotificationData["severity"] = "info") => {
@@ -26,7 +31,7 @@ const NotificationContainer: React.FC = () => {
 
   useEffect(() => {
     const handleNotification = (data: NotificationData) => {
-      setMessage(data.message);
+      setMessage(truncateMessage(data.message, 50)); // Limit message length
       setSeverity(data.severity);
       setOpen(true);
     };
@@ -39,8 +44,19 @@ const NotificationContainer: React.FC = () => {
   }, []);
 
   return (
-    <Snackbar open={open} autoHideDuration={3000} onClose={() => setOpen(false)}>
-      <Alert onClose={() => setOpen(false)} severity={severity} variant="filled">
+    <Snackbar
+      open={open}
+      autoHideDuration={4000}
+      onClose={() => setOpen(false)}
+      anchorOrigin={{ vertical: "top", horizontal: "center" } as SnackbarOrigin} // Bigger Snackbar at top center
+      sx={{ "& .MuiSnackbarContent-root": { minWidth: "400px", fontSize: "1.1rem", padding: "12px" } }} // Larger size
+    >
+      <Alert
+        onClose={() => setOpen(false)}
+        severity={severity}
+        variant="filled"
+        sx={{ fontSize: "1rem", padding: "10px 20px" }} // Bigger text inside Alert
+      >
         {message}
       </Alert>
     </Snackbar>
