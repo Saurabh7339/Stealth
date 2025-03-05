@@ -1,112 +1,57 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { TextField, Autocomplete } from "@mui/material";
-import { useSelector, useDispatch } from "react-redux";
-import { fetchDomains } from "./domainSlice"; // Import your Redux action
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { Snackbar, Alert } from "@mui/material";
+import { EventEmitter } from "events";
+import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 
-const DomainSelector = () => {
-  const dispatch = useDispatch();
-  const domains = useSelector((state) => state.domains.list); // Getting domain list from Redux store
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [isFetching, setIsFetching] = useState(false);
-  const [hasMoreAbove, setHasMoreAbove] = useState(true);
-  const [hasMoreBelow, setHasMoreBelow] = useState(true);
-  const listboxRef = useRef(null); // Reference to listbox for maintaining scroll position
+// Create an event emitter
+const eventEmitter = new EventEmitter();
 
-  // Function to fetch domains (direction: "above" or "below")
-  const loadDomains = async (search, pageNum, direction) => {
-    if (isFetching) return; // Prevent multiple calls
-    setIsFetching(true);
+// Function to show a notification
+export const showNotification = (message, severity = "info") => {
+  eventEmitter.emit("notify", { message, severity });
+};
 
-    const newDomains = await dispatch(fetchDomains({ search, page: pageNum }));
+// Notification Component
+const NotificationContainer = () => {
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [severity, setSeverity] = useState("info");
 
-    if (newDomains.length === 0) {
-      if (direction === "above") setHasMoreAbove(false);
-      else setHasMoreBelow(false);
-    }
-
-    setIsFetching(false);
-    return newDomains;
-  };
-
-  // Fetch initial data & reset on search
   useEffect(() => {
-    const fetchInitialData = async () => {
-      await loadDomains(searchTerm, 1, "below");
-      setPage(2);
+    const handleNotification = ({ message, severity }) => {
+      setMessage(message);
+      setSeverity(severity);
+      setOpen(true);
     };
-    fetchInitialData();
-  }, [searchTerm, dispatch]);
 
-  // Scroll Event Handler
-  const handleScroll = useCallback(
-    async (event) => {
-      const listboxNode = event.currentTarget;
-      if (!listboxNode) return;
+    eventEmitter.on("notify", handleNotification);
 
-      const scrollTop = listboxNode.scrollTop;
-      const isAtTop = scrollTop === 0;
-      const isAtBottom =
-        listboxNode.scrollHeight - listboxNode.scrollTop <=
-        listboxNode.clientHeight + 10;
-
-      // Scroll up (load older data)
-      if (isAtTop && hasMoreAbove && !isFetching) {
-        const prevScrollHeight = listboxNode.scrollHeight;
-        const olderDomains = await loadDomains(searchTerm, page - 1, "above");
-
-        if (olderDomains?.length) {
-          setPage((prev) => (prev > 1 ? prev - 1 : prev));
-
-          // Preserve scroll position after prepending new items
-          setTimeout(() => {
-            listboxNode.scrollTop = listboxNode.scrollHeight - prevScrollHeight;
-          }, 0);
-        }
-      }
-
-      // Scroll down (load newer data)
-      if (isAtBottom && hasMoreBelow && !isFetching) {
-        await loadDomains(searchTerm, page, "below");
-        setPage((prev) => prev + 1);
-      }
-    },
-    [isFetching, searchTerm, page, hasMoreAbove, hasMoreBelow, dispatch]
-  );
+    return () => {
+      eventEmitter.off("notify", handleNotification);
+    };
+  }, []);
 
   return (
-    <Autocomplete
-      freeSolo
-      options={domains}
-      onInputChange={(e, value) => setSearchTerm(value)}
-      renderInput={(params) => (
-        <TextField {...params} label="Search Domains" variant="outlined" />
-      )}
-      slotProps={{
-        popper: {
-          modifiers: [
-            {
-              name: "preventOverflow",
-              options: { boundary: "window" },
-            },
-          ],
-        },
-        listbox: {
-          ref: listboxRef,
-          onScroll: handleScroll,
-          style: {
-            maxHeight: "250px", // Ensure dropdown has enough height for scrolling
-            overflowY: "auto",  // Enables scrolling
-          },
-        },
-      }}
-      renderOption={(props, option) => (
-        <li {...props} key={option.id}>
-          {option.name}
-        </li>
-      )}
-    />
+    <Snackbar open={open} autoHideDuration={3000} onClose={() => setOpen(false)}>
+      <Alert onClose={() => setOpen(false)} severity={severity} variant="filled">
+        {message}
+      </Alert>
+    </Snackbar>
   );
 };
 
-export default DomainSelector;
+// Function to mount NotificationContainer once globally
+const mountNotification = () => {
+  const div = document.createElement("div");
+  document.body.appendChild(div);
+  ReactDOM.render(
+    <ThemeProvider theme={createTheme()}>
+      <NotificationContainer />
+    </ThemeProvider>,
+    div
+  );
+};
+
+// Mount notification container when the app loads
+mountNotification();
