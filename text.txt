@@ -1,5 +1,5 @@
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { Snackbar, Alert, SnackbarOrigin } from "@mui/material";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { Snackbar, SnackbarOrigin } from "@mui/material";
 import EventEmitter from "events";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
@@ -37,28 +37,38 @@ const NotificationContainer: React.FC = () => {
     };
 
     eventEmitter.on("notify", handleNotification);
-
     return () => {
       eventEmitter.off("notify", handleNotification);
     };
   }, []);
+
+  // Define background colors based on severity
+  const getBackgroundColor = (type: NotificationData["severity"]) => {
+    return type === "success" ? "#1db954" : "#ff4c4c"; // Green for success, red for error/warning
+  };
 
   return (
     <Snackbar
       open={open}
       autoHideDuration={4000}
       onClose={() => setOpen(false)}
-      anchorOrigin={{ vertical: "top", horizontal: "center" } as SnackbarOrigin} // Bigger Snackbar at top center
-      sx={{ "& .MuiSnackbarContent-root": { minWidth: "400px", fontSize: "1.1rem", padding: "12px" } }} // Larger size
+      anchorOrigin={{ vertical: "top", horizontal: "center" } as SnackbarOrigin} // Positioned at the top center
+      sx={{
+        "& .MuiSnackbarContent-root": {
+          minWidth: "420px",
+          backgroundColor: "black",
+          color: "white",
+          fontSize: "1.2rem",
+          padding: "16px",
+          borderRadius: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderBottom: `4px solid ${getBackgroundColor(severity)}`, // Colored border
+        },
+      }}
     >
-      <Alert
-        onClose={() => setOpen(false)}
-        severity={severity}
-        variant="filled"
-        sx={{ fontSize: "1rem", padding: "10px 20px" }} // Bigger text inside Alert
-      >
-        {message}
-      </Alert>
+      <div>{message}</div>
     </Snackbar>
   );
 };
