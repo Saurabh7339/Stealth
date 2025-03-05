@@ -1,27 +1,33 @@
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { Snackbar, Alert } from "@mui/material";
-import { EventEmitter } from "events";
+import EventEmitter from "events";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 
-// Create an event emitter
+// Define event emitter instance
 const eventEmitter = new EventEmitter();
 
-// Function to show a notification
-export const showNotification = (message, severity = "info") => {
+// Define notification types
+interface NotificationData {
+  message: string;
+  severity: "success" | "error" | "warning" | "info";
+}
+
+// Function to show a notification globally
+export const showNotification = (message: string, severity: NotificationData["severity"] = "info") => {
   eventEmitter.emit("notify", { message, severity });
 };
 
-// Notification Component
-const NotificationContainer = () => {
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState("");
-  const [severity, setSeverity] = useState("info");
+// Notification component to handle display
+const NotificationContainer: React.FC = () => {
+  const [open, setOpen] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+  const [severity, setSeverity] = useState<NotificationData["severity"]>("info");
 
   useEffect(() => {
-    const handleNotification = ({ message, severity }) => {
-      setMessage(message);
-      setSeverity(severity);
+    const handleNotification = (data: NotificationData) => {
+      setMessage(data.message);
+      setSeverity(data.severity);
       setOpen(true);
     };
 
@@ -41,7 +47,7 @@ const NotificationContainer = () => {
   );
 };
 
-// Function to mount NotificationContainer once globally
+// Function to mount NotificationContainer globally
 const mountNotification = () => {
   const div = document.createElement("div");
   document.body.appendChild(div);
@@ -53,5 +59,5 @@ const mountNotification = () => {
   );
 };
 
-// Mount notification container when the app loads
+// Mount notification container once when the app starts
 mountNotification();
