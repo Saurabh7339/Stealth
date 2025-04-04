@@ -1,89 +1,80 @@
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { Snackbar, SnackbarOrigin } from "@mui/material";
-import EventEmitter from "events";
-import React, { useEffect, useState } from "react";
-import ReactDOM from "react-dom";
+import { useState } from "react";
+import { Box, Typography, TextField, IconButton } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import CheckIcon from "@mui/icons-material/Check";
 
-// Define event emitter instance
-const eventEmitter = new EventEmitter();
+const ThreadList = ({ threads }) => {
+  const [editingThread, setEditingThread] = useState(null);
+  const [editedTitle, setEditedTitle] = useState("");
 
-// Define notification types
-interface NotificationData {
-  message: string;
-  severity: "success" | "error" | "warning" | "info";
-}
+  const handleEditClick = (threadId, title) => {
+    setEditingThread(threadId);
+    setEditedTitle(title);
+  };
 
-// Function to truncate long messages
-const truncateMessage = (msg: string, maxLength: number = 50): string => {
-  return msg.length > maxLength ? msg.slice(0, maxLength) + "…" : msg;
-};
+  const handleTitleChange = (event) => {
+    setEditedTitle(event.target.value);
+  };
 
-// Function to show a notification globally
-export const showNotification = (message: string, severity: NotificationData["severity"] = "info") => {
-  eventEmitter.emit("notify", { message, severity });
-};
-
-// Notification component to handle display
-const NotificationContainer: React.FC = () => {
-  const [open, setOpen] = useState<boolean>(false);
-  const [message, setMessage] = useState<string>("");
-  const [severity, setSeverity] = useState<NotificationData["severity"]>("info");
-
-  useEffect(() => {
-    const handleNotification = (data: NotificationData) => {
-      setMessage(truncateMessage(data.message, 50)); // Limit message length
-      setSeverity(data.severity);
-      setOpen(true);
-    };
-
-    eventEmitter.on("notify", handleNotification);
-    return () => {
-      eventEmitter.off("notify", handleNotification);
-    };
-  }, []);
-
-  // Define background colors based on severity
-  const getBackgroundColor = (type: NotificationData["severity"]) => {
-    return type === "success" ? "#1db954" : "#ff4c4c"; // Green for success, red for error/warning
+  const handleSave = (threadId) => {
+    console.log(`Saving title for thread ${threadId}: ${editedTitle}`);
+    setEditingThread(null);
+    // You can add a function here to update the title in the backend
   };
 
   return (
-    <Snackbar
-      open={open}
-      autoHideDuration={4000}
-      onClose={() => setOpen(false)}
-      anchorOrigin={{ vertical: "top", horizontal: "center" } as SnackbarOrigin} // Positioned at the top center
-      sx={{
-        "& .MuiSnackbarContent-root": {
-          minWidth: "420px",
-          backgroundColor: "black",
-          color: "white",
-          fontSize: "1.2rem",
-          padding: "16px",
-          borderRadius: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderBottom: `4px solid ${getBackgroundColor(severity)}`, // Colored border
-        },
-      }}
-    >
-      <div>{message}</div>
-    </Snackbar>
+    <>
+      {threads.map((thread) => (
+        <Box
+          key={thread.thread_id}
+          sx={{
+            padding: "10px",
+            marginTop: "5px",
+            borderRadius: "5px",
+            cursor: "pointer",
+            background: "#F8F8F8",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+          }}
+        >
+          {/* If this thread is being edited, show input field */}
+          {editingThread === thread.thread_id ? (
+            <TextField
+              value={editedTitle}
+              onChange={handleTitleChange}
+              autoFocus
+              size="small"
+              onBlur={() => handleSave(thread.thread_id)} // Save on blur
+              onKeyDown={(e) => e.key === "Enter" && handleSave(thread.thread_id)}
+              sx={{ flex: 1 }}
+            />
+          ) : (
+            <Typography
+              variant="body1"
+              sx={{ flex: 1, cursor: "pointer" }}
+              onClick={() => handleEditClick(thread.thread_id, thread.title)}
+            >
+              {thread.title}
+            </Typography>
+          )}
+
+          {/* Edit or Save Button */}
+          <IconButton
+            onClick={() =>
+              editingThread === thread.thread_id
+                ? handleSave(thread.thread_id)
+                : handleEditClick(thread.thread_id, thread.title)
+            }
+            size="small"
+          >
+            {editingThread === thread.thread_id ? <CheckIcon /> : <EditIcon />}
+          </IconButton>
+        </Box>
+      ))}
+    </>
   );
 };
 
-// Function to mount NotificationContainer globally
-const mountNotification = () => {
-  const div = document.createElement("div");
-  document.body.appendChild(div);
-  ReactDOM.render(
-    <ThemeProvider theme={createTheme()}>
-      <NotificationContainer />
-    </ThemeProvider>,
-    div
-  );
-};
-
-// Mount notification container once when the app starts
-mountNotification();
+export default ThreadList;
