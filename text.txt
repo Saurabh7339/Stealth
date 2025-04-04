@@ -1,21 +1,22 @@
-<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
-  {(!chatState?.chats || chatState.chats.length === 0) ? (
-    <Box sx={{ textAlign: "center" }}>
-      <img 
-        src="/path-to-chatgpt-icon.png" 
-        alt="Start a new chat" 
-        width={100} 
-        height={100} 
-        style={{ opacity: 0.6 }} // Optional styling for a faded look
-      />
-      <Typography variant="h6" sx={{ mt: 2, color: "gray" }}>
-        Start a new chat
-      </Typography>
-    </Box>
-  ) : (
-    // Your existing chat rendering logic
-    chatState.chats.map((chat) => (
-      <ChatComponent key={chat.id} chat={chat} />
-    ))
-  )}
-</Box>
+{(!chatState?.chats || chatState.chats.length === 0) && (
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100%",
+    }}
+  >
+    <img 
+      src="/path-to-chatgpt-icon.png" 
+      alt="Start a new chat" 
+      width={100} 
+      height={100} 
+      style={{ opacity: 0.6 }} // Optional styling for a faded look
+    />
+    <Typography variant="h6" sx={{ mt: 2, color: "gray" }}>
+      Start a new chat
+    </Typography>
+  </Box>
+)}
