@@ -1,80 +1,21 @@
-import { useState } from "react";
-import { Box, Typography, TextField, IconButton } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import CheckIcon from "@mui/icons-material/Check";
-
-const ThreadList = ({ threads }) => {
-  const [editingThread, setEditingThread] = useState(null);
-  const [editedTitle, setEditedTitle] = useState("");
-
-  const handleEditClick = (threadId, title) => {
-    setEditingThread(threadId);
-    setEditedTitle(title);
-  };
-
-  const handleTitleChange = (event) => {
-    setEditedTitle(event.target.value);
-  };
-
-  const handleSave = (threadId) => {
-    console.log(`Saving title for thread ${threadId}: ${editedTitle}`);
-    setEditingThread(null);
-    // You can add a function here to update the title in the backend
-  };
-
-  return (
-    <>
-      {threads.map((thread) => (
-        <Box
-          key={thread.thread_id}
-          sx={{
-            padding: "10px",
-            marginTop: "5px",
-            borderRadius: "5px",
-            cursor: "pointer",
-            background: "#F8F8F8",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "10px",
-          }}
-        >
-          {/* If this thread is being edited, show input field */}
-          {editingThread === thread.thread_id ? (
-            <TextField
-              value={editedTitle}
-              onChange={handleTitleChange}
-              autoFocus
-              size="small"
-              onBlur={() => handleSave(thread.thread_id)} // Save on blur
-              onKeyDown={(e) => e.key === "Enter" && handleSave(thread.thread_id)}
-              sx={{ flex: 1 }}
-            />
-          ) : (
-            <Typography
-              variant="body1"
-              sx={{ flex: 1, cursor: "pointer" }}
-              onClick={() => handleEditClick(thread.thread_id, thread.title)}
-            >
-              {thread.title}
-            </Typography>
-          )}
-
-          {/* Edit or Save Button */}
-          <IconButton
-            onClick={() =>
-              editingThread === thread.thread_id
-                ? handleSave(thread.thread_id)
-                : handleEditClick(thread.thread_id, thread.title)
-            }
-            size="small"
-          >
-            {editingThread === thread.thread_id ? <CheckIcon /> : <EditIcon />}
-          </IconButton>
-        </Box>
-      ))}
-    </>
-  );
-};
-
-export default ThreadList;
+<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
+  {(!chatState?.chats || chatState.chats.length === 0) ? (
+    <Box sx={{ textAlign: "center" }}>
+      <img 
+        src="/path-to-chatgpt-icon.png" 
+        alt="Start a new chat" 
+        width={100} 
+        height={100} 
+        style={{ opacity: 0.6 }} // Optional styling for a faded look
+      />
+      <Typography variant="h6" sx={{ mt: 2, color: "gray" }}>
+        Start a new chat
+      </Typography>
+    </Box>
+  ) : (
+    // Your existing chat rendering logic
+    chatState.chats.map((chat) => (
+      <ChatComponent key={chat.id} chat={chat} />
+    ))
+  )}
+</Box>
