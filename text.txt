@@ -1,31 +1,25 @@
-{editingThreadId === thread.thread_id ? (
-  <TextField
-    value={newThreadTitle}
-    onChange={(e) => setNewThreadTitle(e.target.value)}
-    onBlur={() => handleRenameSave(thread.thread_id)}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter') {
-        handleRenameSave(thread.thread_id);
-      }
-    }}
-    autoFocus
-    size="small"
-    sx={{ fontSize: '14px' }}
-  />
-) : (
-  <Typography
-    onClick={() => {
-      setEditingThreadId(thread.thread_id);
-      setNewThreadTitle(thread.title);
-    }}
-    sx={{
-      cursor: 'pointer',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-      fontSize: '14px',
-    }}
-  >
-    {thread.title}
-  </Typography>
-)}
+import React, { useEffect, useRef } from 'react';
+
+// inside your component:
+const inputRef = useRef(null);
+
+// Cancel editing on outside click
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      inputRef.current &&
+      !(inputRef.current as HTMLElement).contains(event.target as Node)
+    ) {
+      setEditingThreadId(null);
+      setNewThreadTitle('');
+    }
+  };
+
+  if (editingThreadId) {
+    document.addEventListener('mousedown', handleClickOutside);
+  }
+
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);
+  };
+}, [editingThreadId]);
