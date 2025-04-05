@@ -1,1 +1,31 @@
-https://file.pizza/download/nia5quuu
+{editingThreadId === thread.thread_id ? (
+  <TextField
+    value={newThreadTitle}
+    onChange={(e) => setNewThreadTitle(e.target.value)}
+    onBlur={() => handleRenameSave(thread.thread_id)}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter') {
+        handleRenameSave(thread.thread_id);
+      }
+    }}
+    autoFocus
+    size="small"
+    sx={{ fontSize: '14px' }}
+  />
+) : (
+  <Typography
+    onClick={() => {
+      setEditingThreadId(thread.thread_id);
+      setNewThreadTitle(thread.title);
+    }}
+    sx={{
+      cursor: 'pointer',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      fontSize: '14px',
+    }}
+  >
+    {thread.title}
+  </Typography>
+)}
