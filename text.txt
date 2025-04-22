@@ -1,9 +1,83 @@
-FROM python:3.10-slim  # or any other Debian/Ubuntu-based base image
+Here's the corrected Dockerfile with explanations for each fix:
 
-# Update and install the latest freetype
+```dockerfile
+# Use official Debian base image
+FROM debian:12.10
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libfreetype6 \
-    libfreetype6-dev && \
+    apt-get install --no-install-recommends -y \
+    curl \
+    ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Poetry properly
+RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python3 - && \
+    ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry && \
+    poetry config virtualenvs.create false
+
+# Install required system packages
+RUN apt-get update && \
+    apt-get install --only-upgrade -y \
+    libperl5.36 \  # Fixed typo from libper15.36
+    perl \
+    perl-base \
+    perl-modules-5.36 \
+    linux-libc-dev && \
+    apt-get install -y --no-install-recommends \
+    telnet \
+    libfreetype6 && \  # Removed dev package unless absolutely needed
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy dependency files
+COPY pyproject.toml poetry.lock* ./
+
+# Install Python dependencies
+RUN poetry install --no-root --no-interaction --no-ansi
+
+# Copy the rest of application
+COPY . .
+
+# Set entrypoint
+ENTRYPOINT ["./entrypoint.sh"]
+```
+
+Key corrections made:
+
+1. **Fixed Poetry installation**:
+   - Added missing `python3 -` at end of curl command
+   - Proper symlink creation to `/usr/local/bin`
+   - Fixed `-sSL` flag (was `-ssl`)
+
+2. **Package management**:
+   - Fixed typo in `libperl5.36` (was `libper15.36`)
+   - Separated initial curl/certificate installation
+   - Added `--no-install-recommends` to reduce image size
+   - Removed `libfreetype6-dev` unless specifically needed
+
+3. **Structure improvements**:
+   - Added `WORKDIR /app`
+   - Proper layer ordering (tools → system packages → Python deps → app code)
+   - Added `ENTRYPOINT` declaration
+   - Cleaned up COPY commands
+
+4. **Poetry optimizations**:
+   - Added `--no-interaction --no-ansi` flags
+   - Removed redundant `poetry lock` command
+
+5. **Security improvements**:
+   - Added `ca-certificates` for SSL verification
+   - Cleaned up apt cache properly
+
+Additional recommendations:
+1. Consider using multi-stage builds if image size is important
+2. Add a non-root user for security
+3. Add `.dockerignore` file to exclude unnecessary files
+4. Specify versions for critical packages
+
+Would you like me to provide any of these additional improvements?
