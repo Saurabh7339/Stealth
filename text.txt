@@ -1,11 +1,4 @@
-# Fixing critical vulnerabilities by installing updated versions
-RUN apt-get update && apt-get install -y \
-    libperl5.36=5.36.0-7+deb12u2 \
-    perl=5.36.0-7+deb12u2 \
-    perl-base=5.36.0-7+deb12u2 \
-    perl-modules-5.36=5.36.0-7+deb12u2 \
-    linux-libc-dev=6.1.133-1 \
- && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install Python packages with secure versions
-RUN poetry add starlette@0.40.0 tornado@6.4.2
+COPY install-poetry.py .
+RUN python install-poetry.py --yes --path /opt/poetry \
+    && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry \
+    && poetry config virtualenvs.create false
