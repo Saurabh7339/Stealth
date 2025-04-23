@@ -1,4 +1,6 @@
-COPY install-poetry.py .
-RUN python install-poetry.py --yes --path /opt/poetry \
-    && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry \
-    && poetry config virtualenvs.create false
+ENV POETRY_HOME=/home/youruser/poetry
+ENV PATH="${POETRY_HOME}/bin:$PATH"
+
+RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=$POETRY_HOME python && \
+    ln -s ${POETRY_HOME}/bin/poetry /home/youruser/.local/bin/poetry && \
+    poetry config virtualenvs.create false
