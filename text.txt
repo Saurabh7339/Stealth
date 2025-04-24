@@ -1,6 +1,11 @@
-ENV POETRY_HOME=/home/youruser/poetry
-ENV PATH="${POETRY_HOME}/bin:$PATH"
-
-RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=$POETRY_HOME python && \
-    ln -s ${POETRY_HOME}/bin/poetry /home/youruser/.local/bin/poetry && \
-    poetry config virtualenvs.create false
+apk add \
+  libexpat=2.6.3-r0 \
+  libxml2=2.11.8-r1 \
+  libxslt=1.1.39-r1 \
+  musl=1.2.4_git20230717-r5 \
+  musl-utils=1.2.4_git20230717-r5 \
+  libcrypto3=3.1.7-r0 \
+  libssl3=3.1.7-r0 \
+  curl=8.12.0-r0 \
+  libcurl=8.12.0-r0 \
+  xz-libs=5.4.5-r1
