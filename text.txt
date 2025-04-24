@@ -1,4 +1,4 @@
-apk add \
+RUN apk update && apk add --no-cache \
   libexpat=2.6.3-r0 \
   libxml2=2.11.8-r1 \
   libxslt=1.1.39-r1 \
