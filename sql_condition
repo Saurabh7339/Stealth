@@ -1,0 +1,4 @@
+select gph.id , gph.usecase_id, gph.is_active from genai_prompt_history as gph where gph.id=id and gph.usecase_id=genai_usecase_id
+
+
+select upl.usecase_id , upl.prompt_id from usecase_phase_prompt_link as uppl where uppl.usecase_id= given_id and uppl.prompt_id=given_prompt_id
